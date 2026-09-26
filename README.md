@@ -65,6 +65,17 @@ User data is isolated using user-specific records and Row Level Security (RLS).
 - User-specific financial data
 - No service-role keys exposed in the mobile application
 
+## Screenshots
+
+### Login
+![CashOrg Login](screenshots/login.png)
+
+### Dashboard
+![CashOrg Dashboard](screenshots/dashboard.png)
+
+### Reports
+![CashOrg Reports](screenshots/reports.png)
+
 ## Installation
 
 Clone the repository:
