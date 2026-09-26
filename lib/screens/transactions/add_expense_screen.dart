@@ -106,6 +106,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   }
 
   Future<void> _pickDate() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
@@ -114,11 +115,18 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppTheme.expenseRose,
-              onPrimary: Colors.white,
-              onSurface: AppTheme.textPrimary,
-            ),
+            colorScheme: isDark
+                ? const ColorScheme.dark(
+                    primary: AppTheme.expenseRose,
+                    onPrimary: Colors.white,
+                    surface: AppTheme.darkSurface,
+                    onSurface: AppTheme.darkTextPrimary,
+                  )
+                : const ColorScheme.light(
+                    primary: AppTheme.expenseRose,
+                    onPrimary: Colors.white,
+                    onSurface: AppTheme.textPrimary,
+                  ),
           ),
           child: child!,
         );
@@ -212,6 +220,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryTextColor = isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary;
+    final secondaryTextColor = isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary;
+
     final dateFormat = DateFormat('EEEE, MMM dd, yyyy');
     final availableCategories = _categoryService.allExpenseCategories;
     final availableAccounts = _accountService.accounts;
@@ -231,7 +243,6 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Add Expense'),
-        backgroundColor: Colors.white,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -245,7 +256,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppTheme.expenseLight,
+                    color: isDark
+                        ? AppTheme.expenseRose.withValues(alpha: 0.15)
+                        : AppTheme.expenseLight,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Row(
@@ -259,11 +272,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                         child: const Icon(Icons.arrow_upward_rounded, color: Colors.white, size: 24),
                       ),
                       const SizedBox(width: 14),
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            const Text(
                               'Expense Entry',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
@@ -271,12 +284,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                 color: AppTheme.expenseRose,
                               ),
                             ),
-                            SizedBox(height: 2),
+                            const SizedBox(height: 2),
                             Text(
                               'Record your spending in Indian Rupees (₹)',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: AppTheme.textSecondary,
+                                color: secondaryTextColor,
                               ),
                             ),
                           ],
@@ -313,12 +326,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
+                        Text(
                           'Account / Paid From',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: AppTheme.textPrimary,
+                            color: primaryTextColor,
                           ),
                         ),
                         TextButton.icon(
@@ -344,9 +357,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
                       initialValue: _selectedAccountId,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         prefixIcon: Icon(Icons.account_balance_wallet_rounded,
-                            color: AppTheme.textSecondary),
+                            color: secondaryTextColor),
                       ),
                       items: availableAccounts.map((acc) {
                         return DropdownMenuItem<String>(
@@ -387,12 +400,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
+                        Text(
                           'Expense Category',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: AppTheme.textPrimary,
+                            color: primaryTextColor,
                           ),
                         ),
                         TextButton.icon(
@@ -418,8 +431,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
                       initialValue: _selectedCategory,
-                      decoration: const InputDecoration(
-                        prefixIcon: Icon(Icons.category_outlined, color: AppTheme.textSecondary),
+                      decoration: InputDecoration(
+                        prefixIcon: Icon(Icons.category_outlined, color: secondaryTextColor),
                       ),
                       items: availableCategories.map((catModel) {
                         final icon = CategoryHelper.getIcon(
@@ -469,12 +482,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Date',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: AppTheme.textPrimary,
+                        color: primaryTextColor,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -484,26 +497,28 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: isDark ? AppTheme.darkSurface : Colors.white,
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: AppTheme.inputBorder),
+                          border: Border.all(
+                            color: isDark ? AppTheme.darkInputBorder : AppTheme.inputBorder,
+                          ),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.calendar_today_rounded,
-                                color: AppTheme.textSecondary, size: 20),
+                            Icon(Icons.calendar_today_rounded,
+                                color: secondaryTextColor, size: 20),
                             const SizedBox(width: 12),
                             Text(
                               dateFormat.format(_selectedDate),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w500,
-                                color: AppTheme.textPrimary,
+                                color: primaryTextColor,
                               ),
                             ),
                             const Spacer(),
-                            const Icon(Icons.arrow_drop_down_rounded,
-                                color: AppTheme.textSecondary),
+                            Icon(Icons.arrow_drop_down_rounded,
+                                color: secondaryTextColor),
                           ],
                         ),
                       ),

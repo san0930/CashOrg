@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import '../../config/app_theme.dart';
 import '../../services/auth_service.dart';
+import '../../services/theme_service.dart';
 import '../dashboard/dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   final AuthService authService;
+  final ThemeService? themeService;
 
   const LoginScreen({
     super.key,
     required this.authService,
+    this.themeService,
   });
 
   @override
@@ -22,7 +25,10 @@ class _LoginScreenState extends State<LoginScreen> {
     if (success && mounted) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (context) => DashboardScreen(authService: widget.authService),
+          builder: (context) => DashboardScreen(
+            authService: widget.authService,
+            themeService: widget.themeService,
+          ),
         ),
       );
     }
@@ -33,7 +39,10 @@ class _LoginScreenState extends State<LoginScreen> {
     if (mounted) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (context) => DashboardScreen(authService: widget.authService),
+          builder: (context) => DashboardScreen(
+            authService: widget.authService,
+            themeService: widget.themeService,
+          ),
         ),
       );
     }
@@ -57,7 +66,23 @@ class _LoginScreenState extends State<LoginScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    IconButton(
+                      tooltip: isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+                      icon: Icon(
+                        isDark ? Icons.wb_sunny_rounded : Icons.nightlight_round,
+                        color: isDark ? const Color(0xFFFBBF24) : AppTheme.primary,
+                      ),
+                      onPressed: () {
+                        ThemeService().toggleTheme();
+                        if (mounted) setState(() {});
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
 
                 // 1. CASHORG LOGO
                 Center(

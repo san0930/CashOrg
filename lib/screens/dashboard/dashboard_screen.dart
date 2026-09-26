@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
 import '../../config/app_theme.dart';
 import '../../models/account_model.dart';
 import '../../models/transaction_model.dart';
@@ -58,6 +59,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _categoryService.addListener(_onServiceUpdate);
     _accountService.addListener(_onServiceUpdate);
     _profileService.addListener(_onServiceUpdate);
+    _themeService.addListener(_onServiceUpdate);
 
     _initUserData();
   }
@@ -89,6 +91,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _categoryService.removeListener(_onServiceUpdate);
     _accountService.removeListener(_onServiceUpdate);
     _profileService.removeListener(_onServiceUpdate);
+    _themeService.removeListener(_onServiceUpdate);
 
     _transactionService.dispose();
     _categoryService.dispose();
@@ -102,7 +105,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Confirm Logout'),
-        content: const Text('Are you sure you want to log out of your account?'),
+        content: const Text(
+          'Are you sure you want to log out of your account?',
+        ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: [
           TextButton(
@@ -119,7 +124,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               if (mounted) {
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(
-                    builder: (context) => LoginScreen(authService: widget.authService),
+                    builder: (context) => LoginScreen(
+                      authService: widget.authService,
+                      themeService: _themeService,
+                    ),
                   ),
                   (route) => false,
                 );
@@ -138,6 +146,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         builder: (context) => ProfileScreen(
           profileService: _profileService,
           authService: widget.authService,
+          themeService: _themeService,
         ),
       ),
     );
@@ -185,15 +194,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final userId = user?.id ?? '';
 
     final profile = _profileService.currentProfile;
-    final displayName = (profile?.name != null &&
+    final displayName =
+        (profile?.name != null &&
             profile!.name.isNotEmpty &&
             profile.name != 'User' &&
             profile.name != 'My Profile')
         ? profile.name
         : ((user?.name != null && user!.name.isNotEmpty && user.name != 'User')
-            ? user.name
-            : 'User');
-    final avatarUrl = (profile?.avatarUrl != null && profile!.avatarUrl!.isNotEmpty)
+              ? user.name
+              : 'User');
+    final avatarUrl =
+        (profile?.avatarUrl != null && profile!.avatarUrl!.isNotEmpty)
         ? profile.avatarUrl
         : user?.avatarUrl;
 
@@ -290,18 +301,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       onTap: _navigateToProfile,
                       borderRadius: BorderRadius.circular(16),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 4,
+                        ),
                         child: Row(
                           children: [
                             CircleAvatar(
                               radius: 20,
-                              backgroundColor: AppTheme.primary.withValues(alpha: 0.15),
-                              backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty)
+                              backgroundColor: AppTheme.primary.withValues(
+                                alpha: 0.15,
+                              ),
+                              backgroundImage:
+                                  (avatarUrl != null && avatarUrl.isNotEmpty)
                                   ? NetworkImage(avatarUrl)
                                   : null,
                               child: (avatarUrl == null || avatarUrl.isEmpty)
                                   ? Text(
-                                      displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U',
+                                      displayName.isNotEmpty
+                                          ? displayName[0].toUpperCase()
+                                          : 'U',
                                       style: const TextStyle(
                                         fontWeight: FontWeight.bold,
                                         color: AppTheme.primary,
@@ -318,7 +337,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   'Welcome back,',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
+                                    color: isDark
+                                        ? AppTheme.darkTextSecondary
+                                        : AppTheme.textSecondary,
                                   ),
                                 ),
                                 const SizedBox(height: 2),
@@ -327,7 +348,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
-                                    color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                                    color: isDark
+                                        ? AppTheme.darkTextPrimary
+                                        : AppTheme.textPrimary,
                                   ),
                                 ),
                               ],
@@ -339,9 +362,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                     Row(
                       children: [
+                        Tooltip(
+                          message: isDark
+                              ? 'Switch to Light Mode'
+                              : 'Switch to Dark Mode',
+                          child: InkWell(
+                            onTap: () => _themeService.toggleTheme(),
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              margin: const EdgeInsets.only(right: 8),
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? AppTheme.darkSurface
+                                    : const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isDark
+                                      ? AppTheme.darkDividerColor
+                                      : Colors.transparent,
+                                ),
+                              ),
+                              child: Icon(
+                                isDark
+                                    ? Icons.wb_sunny_rounded
+                                    : Icons.nightlight_round,
+                                color: isDark
+                                    ? const Color(0xFFFBBF24)
+                                    : AppTheme.primary,
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                        ),
                         PopupMenuButton<String>(
                           tooltip: 'Menu',
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                           icon: Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
@@ -357,7 +415,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                             child: Icon(
                               Icons.more_vert_rounded,
-                              color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                              color: isDark
+                                  ? AppTheme.darkTextPrimary
+                                  : AppTheme.textPrimary,
                               size: 20,
                             ),
                           ),
@@ -379,93 +439,94 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               case 'categories':
                                 _navigateToCategoryManagement();
                                 break;
-                              case 'theme':
-                                _themeService.toggleTheme();
-                                break;
                               case 'profile':
                                 _navigateToProfile();
                                 break;
+                              case 'logout':
+                                _confirmLogout();
+                                break;
                             }
                           },
-                          itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                            const PopupMenuItem<String>(
-                              value: 'accounts',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.account_balance_wallet_rounded, size: 20, color: AppTheme.primary),
-                                  SizedBox(width: 12),
-                                  Text('Manage Accounts'),
-                                ],
-                              ),
-                            ),
-                            const PopupMenuItem<String>(
-                              value: 'reports',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.bar_chart_rounded, size: 20, color: AppTheme.primary),
-                                  SizedBox(width: 12),
-                                  Text('Reports'),
-                                ],
-                              ),
-                            ),
-                            const PopupMenuItem<String>(
-                              value: 'categories',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.category_rounded, size: 20, color: AppTheme.primary),
-                                  SizedBox(width: 12),
-                                  Text('Manage Categories'),
-                                ],
-                              ),
-                            ),
-                            PopupMenuItem<String>(
-                              value: 'theme',
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    _themeService.isDarkMode
-                                        ? Icons.light_mode_rounded
-                                        : Icons.dark_mode_rounded,
-                                    size: 20,
-                                    color: _themeService.isDarkMode
-                                        ? Colors.amber
-                                        : Colors.indigo,
+                          itemBuilder: (BuildContext context) =>
+                              <PopupMenuEntry<String>>[
+                                const PopupMenuItem<String>(
+                                  value: 'accounts',
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.account_balance_wallet_rounded,
+                                        size: 20,
+                                        color: AppTheme.primary,
+                                      ),
+                                      SizedBox(width: 12),
+                                      Text('Manage Accounts'),
+                                    ],
                                   ),
-                                  const SizedBox(width: 12),
-                                  Text(_themeService.isDarkMode ? 'Light Theme' : 'Dark Theme'),
-                                ],
-                              ),
-                            ),
-                            const PopupMenuItem<String>(
-                              value: 'profile',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.person_outline_rounded, size: 20, color: AppTheme.primary),
-                                  SizedBox(width: 12),
-                                  Text('My Profile'),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(width: 6),
-                        IconButton(
-                          tooltip: 'Logout',
-                          icon: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? AppTheme.expenseRose.withValues(alpha: 0.15)
-                                  : const Color(0xFFF1F5F9),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(
-                              Icons.logout_rounded,
-                              color: AppTheme.expenseRose,
-                              size: 20,
-                            ),
-                          ),
-                          onPressed: _confirmLogout,
+                                ),
+                                const PopupMenuItem<String>(
+                                  value: 'reports',
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.bar_chart_rounded,
+                                        size: 20,
+                                        color: AppTheme.primary,
+                                      ),
+                                      SizedBox(width: 12),
+                                      Text('Reports'),
+                                    ],
+                                  ),
+                                ),
+                                const PopupMenuItem<String>(
+                                  value: 'categories',
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.category_rounded,
+                                        size: 20,
+                                        color: AppTheme.primary,
+                                      ),
+                                      SizedBox(width: 12),
+                                      Text('Manage Categories'),
+                                    ],
+                                  ),
+                                ),
+                                const PopupMenuItem<String>(
+                                  value: 'profile',
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.person_outline_rounded,
+                                        size: 20,
+                                        color: AppTheme.primary,
+                                      ),
+                                      SizedBox(width: 12),
+                                      Text('My Profile'),
+                                    ],
+                                  ),
+                                ),
+                                const PopupMenuDivider(),
+                                const PopupMenuItem<String>(
+                                  value: 'logout',
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.logout_rounded,
+                                        size: 20,
+                                        color: AppTheme.expenseRose,
+                                      ),
+                                      SizedBox(width: 12),
+                                      Text(
+                                        'Logout',
+                                        style: TextStyle(
+                                          color: AppTheme.expenseRose,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                         ),
                       ],
                     ),
@@ -482,14 +543,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                        color: isDark
+                            ? AppTheme.darkTextPrimary
+                            : AppTheme.textPrimary,
                       ),
                     ),
                     if (accounts.isNotEmpty)
                       TextButton.icon(
                         onPressed: _navigateToAccountManagement,
                         icon: const Icon(Icons.tune_rounded, size: 16),
-                        label: const Text('Manage', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        label: const Text(
+                          'Manage',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
                       ),
                   ],
                 ),
@@ -504,7 +573,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                     child: Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 20,
+                        horizontal: 16,
+                      ),
                       decoration: BoxDecoration(
                         color: isDark ? AppTheme.darkSurface : Colors.white,
                         borderRadius: BorderRadius.circular(18),
@@ -514,7 +586,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: isDark ? Colors.black26 : const Color(0x06000000),
+                            color: isDark
+                                ? Colors.black26
+                                : const Color(0x06000000),
                             blurRadius: 6,
                             offset: const Offset(0, 3),
                           ),
@@ -523,7 +597,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: const [
-                          Icon(Icons.add_circle_outline_rounded, color: AppTheme.primary, size: 22),
+                          Icon(
+                            Icons.add_circle_outline_rounded,
+                            color: AppTheme.primary,
+                            size: 22,
+                          ),
                           SizedBox(width: 10),
                           Text(
                             'No accounts yet — Tap + Add Account',
@@ -543,112 +621,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     child: ListView(
                       scrollDirection: Axis.horizontal,
                       children: [
-                      // "All Accounts" Pill Card
-                      GestureDetector(
-                        onTap: () => setState(() => _selectedAccountId = 'all'),
-                        child: Container(
-                          width: 140,
-                          margin: const EdgeInsets.only(right: 12),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: _selectedAccountId == 'all'
-                                ? AppTheme.primary
-                                : (isDark ? AppTheme.darkSurface : Colors.white),
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(
-                              color: _selectedAccountId == 'all'
-                                  ? AppTheme.primary
-                                  : (isDark ? AppTheme.darkDividerColor : const Color(0xFFE2E8F0)),
-                              width: 1.5,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: _selectedAccountId == 'all'
-                                    ? AppTheme.primary.withValues(alpha: 0.3)
-                                    : (isDark ? Colors.black26 : const Color(0x06000000)),
-                                blurRadius: 6,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.account_balance_wallet_rounded,
-                                    size: 16,
-                                    color: _selectedAccountId == 'all'
-                                        ? Colors.white
-                                        : AppTheme.primary,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Expanded(
-                                    child: Text(
-                                      'All Accounts',
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                        color: _selectedAccountId == 'all'
-                                            ? Colors.white
-                                            : (isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                currencyFormat.format(
-                                  _accountService.calculateTotalBalance(allTransactions),
-                                ),
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w800,
-                                  color: _selectedAccountId == 'all'
-                                      ? Colors.white
-                                      : (isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      // Individual Account Cards
-                      ...accounts.map((acc) {
-                        final isSelected = _selectedAccountId == acc.id;
-                        final accBalance = _accountService.calculateAccountBalance(
-                          acc.id,
-                          allTransactions,
-                        );
-                        final accentColor = _parseColor(acc.color);
-
-                        return GestureDetector(
-                          onTap: () => setState(() => _selectedAccountId = acc.id),
+                        // "All Accounts" Pill Card
+                        GestureDetector(
+                          onTap: () =>
+                              setState(() => _selectedAccountId = 'all'),
                           child: Container(
                             width: 140,
                             margin: const EdgeInsets.only(right: 12),
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: isSelected
-                                  ? accentColor
-                                  : (isDark ? AppTheme.darkSurface : Colors.white),
+                              color: _selectedAccountId == 'all'
+                                  ? AppTheme.primary
+                                  : (isDark
+                                        ? AppTheme.darkSurface
+                                        : Colors.white),
                               borderRadius: BorderRadius.circular(18),
                               border: Border.all(
-                                color: isSelected
-                                    ? accentColor
-                                    : (isDark ? AppTheme.darkDividerColor : const Color(0xFFE2E8F0)),
+                                color: _selectedAccountId == 'all'
+                                    ? AppTheme.primary
+                                    : (isDark
+                                          ? AppTheme.darkDividerColor
+                                          : const Color(0xFFE2E8F0)),
                                 width: 1.5,
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: isSelected
-                                      ? accentColor.withValues(alpha: 0.3)
-                                      : (isDark ? Colors.black26 : const Color(0x06000000)),
+                                  color: _selectedAccountId == 'all'
+                                      ? AppTheme.primary.withValues(alpha: 0.3)
+                                      : (isDark
+                                            ? Colors.black26
+                                            : const Color(0x06000000)),
                                   blurRadius: 6,
                                   offset: const Offset(0, 3),
                                 ),
@@ -661,23 +663,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 Row(
                                   children: [
                                     Icon(
-                                      acc.accountType == 'cash'
-                                          ? Icons.payments_rounded
-                                          : Icons.account_balance_rounded,
+                                      Icons.account_balance_wallet_rounded,
                                       size: 16,
-                                      color: isSelected ? Colors.white : accentColor,
+                                      color: _selectedAccountId == 'all'
+                                          ? Colors.white
+                                          : AppTheme.primary,
                                     ),
                                     const SizedBox(width: 6),
                                     Expanded(
                                       child: Text(
-                                        acc.accountName,
+                                        'All Accounts',
                                         overflow: TextOverflow.ellipsis,
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.bold,
-                                          color: isSelected
+                                          color: _selectedAccountId == 'all'
                                               ? Colors.white
-                                              : (isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary),
+                                              : (isDark
+                                                    ? AppTheme.darkTextPrimary
+                                                    : AppTheme.textPrimary),
                                         ),
                                       ),
                                     ),
@@ -685,62 +689,163 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  currencyFormat.format(accBalance),
+                                  currencyFormat.format(
+                                    _accountService.calculateTotalBalance(
+                                      allTransactions,
+                                    ),
+                                  ),
                                   style: TextStyle(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w800,
-                                    color: isSelected
+                                    color: _selectedAccountId == 'all'
                                         ? Colors.white
-                                        : (isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary),
+                                        : (isDark
+                                              ? AppTheme.darkTextPrimary
+                                              : AppTheme.textPrimary),
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                        );
-                      }),
-
-                      // "+ Add Account" Quick Button
-                      GestureDetector(
-                        onTap: () => AddAccountDialog.show(
-                          context,
-                          accountService: _accountService,
-                          userId: userId,
                         ),
-                        child: Container(
-                          width: 110,
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: isDark
-                                ? AppTheme.darkSurface
-                                : const Color(0xFFF8FAFC),
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(
-                              color: AppTheme.primary.withValues(alpha: 0.4),
-                              style: BorderStyle.solid,
+
+                        // Individual Account Cards
+                        ...accounts.map((acc) {
+                          final isSelected = _selectedAccountId == acc.id;
+                          final accBalance = _accountService
+                              .calculateAccountBalance(acc.id, allTransactions);
+                          final accentColor = _parseColor(acc.color);
+
+                          return GestureDetector(
+                            onTap: () =>
+                                setState(() => _selectedAccountId = acc.id),
+                            child: Container(
+                              width: 140,
+                              margin: const EdgeInsets.only(right: 12),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? accentColor
+                                    : (isDark
+                                          ? AppTheme.darkSurface
+                                          : Colors.white),
+                                borderRadius: BorderRadius.circular(18),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? accentColor
+                                      : (isDark
+                                            ? AppTheme.darkDividerColor
+                                            : const Color(0xFFE2E8F0)),
+                                  width: 1.5,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: isSelected
+                                        ? accentColor.withValues(alpha: 0.3)
+                                        : (isDark
+                                              ? Colors.black26
+                                              : const Color(0x06000000)),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        acc.accountType == 'cash'
+                                            ? Icons.payments_rounded
+                                            : Icons.account_balance_rounded,
+                                        size: 16,
+                                        color: isSelected
+                                            ? Colors.white
+                                            : accentColor,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          acc.accountName,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                            color: isSelected
+                                                ? Colors.white
+                                                : (isDark
+                                                      ? AppTheme.darkTextPrimary
+                                                      : AppTheme.textPrimary),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    currencyFormat.format(accBalance),
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w800,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : (isDark
+                                                ? AppTheme.darkTextPrimary
+                                                : AppTheme.textPrimary),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }),
+
+                        // "+ Add Account" Quick Button
+                        GestureDetector(
+                          onTap: () => AddAccountDialog.show(
+                            context,
+                            accountService: _accountService,
+                            userId: userId,
+                          ),
+                          child: Container(
+                            width: 110,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? AppTheme.darkSurface
+                                  : const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(
+                                color: AppTheme.primary.withValues(alpha: 0.4),
+                                style: BorderStyle.solid,
+                              ),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: const [
+                                Icon(
+                                  Icons.add_circle_outline_rounded,
+                                  color: AppTheme.primary,
+                                  size: 24,
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  '+ Add Account',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.primary,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
-                              Icon(Icons.add_circle_outline_rounded,
-                                  color: AppTheme.primary, size: 24),
-                              SizedBox(height: 4),
-                              Text(
-                                '+ Add Account',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppTheme.primary,
-                                ),
-                              ),
-                            ],
-                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
                 const SizedBox(height: 22),
 
                 // 3. Current Balance Hero Card (₹) for selected account/all
@@ -750,7 +855,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       : '$selectedAccountName Balance',
                   amount: computedBalance,
                   icon: Icons.account_balance_wallet_rounded,
-                  gradient: isDark ? AppTheme.darkBalanceGradient : AppTheme.balanceGradient,
+                  gradient: isDark
+                      ? AppTheme.darkBalanceGradient
+                      : AppTheme.balanceGradient,
                   isHeroBalance: true,
                 ),
                 const SizedBox(height: 14),
@@ -784,7 +891,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           backgroundColor: AppTheme.expenseRose,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           elevation: 2,
-                          shadowColor: AppTheme.expenseRose.withValues(alpha: 0.3),
+                          shadowColor: AppTheme.expenseRose.withValues(
+                            alpha: 0.3,
+                          ),
                         ),
                         onPressed: () {
                           Navigator.of(context).push(
@@ -798,7 +907,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                           );
                         },
-                        icon: const Icon(Icons.remove_circle_outline_rounded, size: 20),
+                        icon: const Icon(
+                          Icons.remove_circle_outline_rounded,
+                          size: 20,
+                        ),
                         label: const Text('Add Expense'),
                       ),
                     ),
@@ -809,7 +921,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           backgroundColor: AppTheme.incomeGreen,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           elevation: 2,
-                          shadowColor: AppTheme.incomeGreen.withValues(alpha: 0.3),
+                          shadowColor: AppTheme.incomeGreen.withValues(
+                            alpha: 0.3,
+                          ),
                         ),
                         onPressed: () {
                           Navigator.of(context).push(
@@ -823,7 +937,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                           );
                         },
-                        icon: const Icon(Icons.add_circle_outline_rounded, size: 20),
+                        icon: const Icon(
+                          Icons.add_circle_outline_rounded,
+                          size: 20,
+                        ),
                         label: const Text('Add Income'),
                       ),
                     ),
@@ -855,7 +972,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.bold,
-                        color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                        color: isDark
+                            ? AppTheme.darkTextPrimary
+                            : AppTheme.textPrimary,
                       ),
                     ),
                     TextButton(
@@ -888,7 +1007,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       color: isDark ? AppTheme.darkSurface : Colors.white,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isDark ? AppTheme.darkDividerColor : const Color(0xFFF1F5F9),
+                        color: isDark
+                            ? AppTheme.darkDividerColor
+                            : const Color(0xFFF1F5F9),
                       ),
                     ),
                     child: Column(
@@ -906,7 +1027,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
-                            color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                            color: isDark
+                                ? AppTheme.darkTextPrimary
+                                : AppTheme.textPrimary,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -917,7 +1040,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 13,
-                            color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
+                            color: isDark
+                                ? AppTheme.darkTextSecondary
+                                : AppTheme.textSecondary,
                           ),
                         ),
                       ],
@@ -927,7 +1052,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ...recentDisplay.map(
                     (tx) => TransactionTile(
                       transaction: tx,
-                      onDelete: () => _transactionService.deleteTransaction(tx.id),
+                      onDelete: () =>
+                          _transactionService.deleteTransaction(tx.id),
                     ),
                   ),
               ],

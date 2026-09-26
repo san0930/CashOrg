@@ -163,10 +163,14 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
 
     final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryTextColor = isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary;
+    final secondaryTextColor = isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary;
+
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: isDark ? AppTheme.darkSurface : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(20, 16, 20, 20 + bottomPadding),
       child: SingleChildScrollView(
@@ -182,7 +186,7 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFCBD5E1),
+                    color: isDark ? AppTheme.darkDividerColor : const Color(0xFFCBD5E1),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -208,15 +212,15 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
                   Expanded(
                     child: Text(
                       widget.isIncome ? 'Add Income Category' : 'Add Expense Category',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.textPrimary,
+                        color: primaryTextColor,
                       ),
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close_rounded, color: AppTheme.textSecondary),
+                    icon: Icon(Icons.close_rounded, color: secondaryTextColor),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -228,9 +232,9 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFEF2F2),
+                    color: isDark ? AppTheme.expenseRose.withValues(alpha: 0.15) : const Color(0xFFFEF2F2),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFFCA5A5)),
+                    border: Border.all(color: AppTheme.expenseRose.withValues(alpha: 0.4)),
                   ),
                   child: Row(
                     children: [
@@ -272,12 +276,12 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Choose Icon',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: AppTheme.textPrimary,
+                      color: primaryTextColor,
                     ),
                   ),
                   if (_selectedIcon != null)
@@ -308,12 +312,12 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
               const SizedBox(height: 20),
 
               // 3. Optional Color Picker
-              const Text(
+              Text(
                 'Theme Color (Optional)',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: AppTheme.textPrimary,
+                  color: primaryTextColor,
                 ),
               ),
               const SizedBox(height: 10),
@@ -340,7 +344,7 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
                           color: color,
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: isSelected ? AppTheme.textPrimary : Colors.transparent,
+                            color: isSelected ? primaryTextColor : Colors.transparent,
                             width: 2.5,
                           ),
                           boxShadow: isSelected

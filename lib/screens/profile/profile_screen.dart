@@ -2,17 +2,20 @@ import 'package:flutter/material.dart';
 import '../../config/app_theme.dart';
 import '../../services/auth_service.dart';
 import '../../services/profile_service.dart';
+import '../../services/theme_service.dart';
 import '../auth/login_screen.dart';
 import 'edit_profile_dialog.dart';
 
 class ProfileScreen extends StatefulWidget {
   final ProfileService profileService;
   final AuthService authService;
+  final ThemeService? themeService;
 
   const ProfileScreen({
     super.key,
     required this.profileService,
     required this.authService,
+    this.themeService,
   });
 
   @override
@@ -65,7 +68,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               if (mounted) {
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(
-                    builder: (context) => LoginScreen(authService: widget.authService),
+                    builder: (context) => LoginScreen(
+                      authService: widget.authService,
+                      themeService: widget.themeService,
+                    ),
                   ),
                   (route) => false,
                 );
@@ -199,6 +205,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   onPressed: _openEditProfile,
                   icon: const Icon(Icons.edit_outlined, size: 20),
                   label: const Text('Edit Profile'),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Theme Mode Toggle
+              Card(
+                elevation: 0,
+                color: isDark ? AppTheme.darkSurface : Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(
+                    color: isDark ? AppTheme.darkDividerColor : const Color(0xFFE2E8F0),
+                  ),
+                ),
+                child: SwitchListTile(
+                  secondary: Icon(
+                    isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                    color: isDark ? const Color(0xFFFBBF24) : AppTheme.primary,
+                  ),
+                  title: Text(
+                    'Dark Theme',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                    ),
+                  ),
+                  subtitle: Text(
+                    isDark ? 'Dark mode enabled' : 'Light mode enabled',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
+                    ),
+                  ),
+                  value: isDark,
+                  activeThumbColor: AppTheme.primary,
+                  onChanged: (_) {
+                    ThemeService().toggleTheme();
+                    if (mounted) setState(() {});
+                  },
                 ),
               ),
               const SizedBox(height: 16),

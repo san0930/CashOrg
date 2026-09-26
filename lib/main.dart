@@ -60,7 +60,10 @@ class _ExpenseTrackerAppState extends State<ExpenseTrackerApp> {
                   themeService: _themeService,
                 );
               }
-              return LoginScreen(authService: _authService);
+              return LoginScreen(
+                authService: _authService,
+                themeService: _themeService,
+              );
             },
           ),
         );
