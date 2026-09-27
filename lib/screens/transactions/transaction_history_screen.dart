@@ -1,15 +1,27 @@
 import 'package:flutter/material.dart';
 import '../../config/app_theme.dart';
 import '../../models/transaction_model.dart';
+import '../../services/account_service.dart';
+import '../../services/category_service.dart';
 import '../../services/transaction_service.dart';
 import '../../widgets/transaction_tile.dart';
+import 'add_expense_screen.dart';
+import 'add_income_screen.dart';
 
 class TransactionHistoryScreen extends StatefulWidget {
   final TransactionService transactionService;
+  final AccountService? accountService;
+  final CategoryService? categoryService;
+  final String? userId;
+  final bool isEmbedded;
 
   const TransactionHistoryScreen({
     super.key,
     required this.transactionService,
+    this.accountService,
+    this.categoryService,
+    this.userId,
+    this.isEmbedded = false,
   });
 
   @override
@@ -18,12 +30,22 @@ class TransactionHistoryScreen extends StatefulWidget {
 
 class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
   String _selectedFilter = 'All'; // 'All', 'Income', 'Expense'
+  String _selectedAccountId = 'All';
+  String _selectedCategory = 'All';
   String _searchQuery = '';
+
+  late final AccountService _accountService;
+  late final CategoryService _categoryService;
 
   @override
   void initState() {
     super.initState();
+    _accountService = widget.accountService ?? AccountService();
+    _categoryService = widget.categoryService ?? CategoryService();
+
     widget.transactionService.addListener(_onUpdate);
+    _accountService.addListener(_onUpdate);
+    _categoryService.addListener(_onUpdate);
   }
 
   void _onUpdate() {
@@ -33,6 +55,16 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
   @override
   void dispose() {
     widget.transactionService.removeListener(_onUpdate);
+    if (widget.accountService == null) {
+      _accountService.dispose();
+    } else {
+      _accountService.removeListener(_onUpdate);
+    }
+    if (widget.categoryService == null) {
+      _categoryService.dispose();
+    } else {
+      _categoryService.removeListener(_onUpdate);
+    }
     super.dispose();
   }
 
@@ -73,6 +105,35 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
     );
   }
 
+  void _editTransaction(TransactionModel tx) {
+    final userId = widget.userId ?? tx.userId;
+    if (tx.isExpense) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => AddExpenseScreen(
+            transactionService: widget.transactionService,
+            categoryService: _categoryService,
+            accountService: _accountService,
+            userId: userId,
+            existingTransaction: tx,
+          ),
+        ),
+      );
+    } else {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => AddIncomeScreen(
+            transactionService: widget.transactionService,
+            categoryService: _categoryService,
+            accountService: _accountService,
+            userId: userId,
+            existingTransaction: tx,
+          ),
+        ),
+      );
+    }
+  }
+
   List<TransactionModel> get _filteredTransactions {
     final all = widget.transactionService.transactions;
     return all.where((tx) {
@@ -80,13 +141,24 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
       if (_selectedFilter == 'Income' && !tx.isIncome) return false;
       if (_selectedFilter == 'Expense' && !tx.isExpense) return false;
 
+      // Account Filter
+      if (_selectedAccountId != 'All' && tx.accountId != _selectedAccountId) {
+        return false;
+      }
+
+      // Category Filter
+      if (_selectedCategory != 'All' && tx.category != _selectedCategory) {
+        return false;
+      }
+
       // Search Query
       if (_searchQuery.isNotEmpty) {
         final query = _searchQuery.toLowerCase();
         final matchesCat = tx.category.toLowerCase().contains(query);
         final matchesDesc = tx.description.toLowerCase().contains(query);
         final matchesAmount = tx.amount.toString().contains(query);
-        return matchesCat || matchesDesc || matchesAmount;
+        final matchesAcc = (tx.accountName ?? '').toLowerCase().contains(query);
+        return matchesCat || matchesDesc || matchesAmount || matchesAcc;
       }
 
       return true;
@@ -97,16 +169,31 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final transactions = _filteredTransactions;
+    final accounts = _accountService.accounts;
+    final categoryNames = [
+      ..._categoryService.allExpenseCategoryNames,
+      ..._categoryService.allIncomeCategoryNames,
+    ];
+
+    // Collect all distinct category names present in transactions or category service
+    final categoryOptions = {
+      'All',
+      ...categoryNames,
+      ...widget.transactionService.transactions.map((t) => t.category),
+    }.toList();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Transaction History'),
-        elevation: 0,
-      ),
+      appBar: widget.isEmbedded
+          ? null
+          : AppBar(
+              title: const Text('Transaction History'),
+              elevation: 0,
+            ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Search Input Box
               TextField(
@@ -119,7 +206,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                   color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
                 ),
                 decoration: InputDecoration(
-                  hintText: 'Search by category or description...',
+                  hintText: 'Search transactions in ₹...',
                   hintStyle: TextStyle(
                     color: isDark ? AppTheme.darkTextSecondary : const Color(0xFF94A3B8),
                   ),
@@ -143,9 +230,9 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                       : null,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
-              // Filter Segment Tabs
+              // Filter Type Segment Tabs (All / Income / Expense)
               Row(
                 children: [
                   _buildFilterChip('All', _selectedFilter == 'All', isDark: isDark),
@@ -155,7 +242,137 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                   _buildFilterChip('Expense', _selectedFilter == 'Expense', color: AppTheme.expenseRose, isDark: isDark),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
+
+              // Dropdown Filters: Account & Category Filters
+              Row(
+                children: [
+                  // Account Filter Dropdown
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: isDark ? AppTheme.darkSurface : Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isDark ? AppTheme.darkDividerColor : const Color(0xFFE2E8F0),
+                        ),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: accounts.any((a) => a.id == _selectedAccountId) ? _selectedAccountId : 'All',
+                          isExpanded: true,
+                          icon: const Icon(Icons.arrow_drop_down, size: 20),
+                          dropdownColor: isDark ? AppTheme.darkSurface : Colors.white,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                          ),
+                          items: [
+                            const DropdownMenuItem<String>(
+                              value: 'All',
+                              child: Text('All Accounts', overflow: TextOverflow.ellipsis),
+                            ),
+                            ...accounts.map(
+                              (acc) => DropdownMenuItem<String>(
+                                value: acc.id,
+                                child: Text(acc.accountName, overflow: TextOverflow.ellipsis),
+                              ),
+                            ),
+                          ],
+                          onChanged: (val) {
+                            if (val != null) {
+                              setState(() {
+                                _selectedAccountId = val;
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+
+                  // Category Filter Dropdown
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: isDark ? AppTheme.darkSurface : Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isDark ? AppTheme.darkDividerColor : const Color(0xFFE2E8F0),
+                        ),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: categoryOptions.contains(_selectedCategory) ? _selectedCategory : 'All',
+                          isExpanded: true,
+                          icon: const Icon(Icons.arrow_drop_down, size: 20),
+                          dropdownColor: isDark ? AppTheme.darkSurface : Colors.white,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                          ),
+                          items: categoryOptions.map(
+                            (cat) => DropdownMenuItem<String>(
+                              value: cat,
+                              child: Text(cat == 'All' ? 'All Categories' : cat, overflow: TextOverflow.ellipsis),
+                            ),
+                          ).toList(),
+                          onChanged: (val) {
+                            if (val != null) {
+                              setState(() {
+                                _selectedCategory = val;
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+
+              // Active Filters indicator if any applied
+              if (_selectedAccountId != 'All' || _selectedCategory != 'All' || _searchQuery.isNotEmpty || _selectedFilter != 'All')
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Showing ${transactions.length} results',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _selectedFilter = 'All';
+                            _selectedAccountId = 'All';
+                            _selectedCategory = 'All';
+                            _searchQuery = '';
+                          });
+                        },
+                        child: const Text(
+                          'Reset Filters',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
 
               // Transactions List
               Expanded(
@@ -182,8 +399,8 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              _searchQuery.isNotEmpty
-                                  ? 'Try searching with a different term'
+                              _searchQuery.isNotEmpty || _selectedAccountId != 'All' || _selectedCategory != 'All'
+                                  ? 'Try changing your filter settings'
                                   : 'Start by adding an income or expense in ₹',
                               style: TextStyle(
                                 fontSize: 13,
@@ -200,6 +417,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                           final tx = transactions[index];
                           return TransactionTile(
                             transaction: tx,
+                            onEdit: () => _editTransaction(tx),
                             onDelete: () => _confirmDelete(tx),
                           );
                         },

@@ -136,6 +136,48 @@ class TransactionService extends ChangeNotifier {
     }
   }
 
+  /// Update an existing transaction
+  Future<bool> updateTransaction(TransactionModel transaction) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final isGuest = transaction.userId.startsWith('guest-');
+      if (SupabaseConfig.isConfigured && !isGuest) {
+        final txMap = transaction.toMap();
+        txMap['id'] = transaction.id;
+
+        final response = await Supabase.instance.client
+            .from('transactions')
+            .update(txMap)
+            .eq('id', transaction.id)
+            .select()
+            .single();
+
+        final updatedTx = TransactionModel.fromMap(response);
+        final index = _transactions.indexWhere((t) => t.id == transaction.id);
+        if (index != -1) {
+          _transactions[index] = updatedTx;
+        }
+      } else {
+        await Future.delayed(const Duration(milliseconds: 100));
+        final index = _transactions.indexWhere((t) => t.id == transaction.id);
+        if (index != -1) {
+          _transactions[index] = transaction;
+        }
+      }
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = _formatError(e);
+      notifyListeners();
+      return false;
+    }
+  }
+
   String _formatError(dynamic e) {
     final str = e.toString();
     if (str.contains('22P02') || str.contains('invalid input syntax for type uuid')) {

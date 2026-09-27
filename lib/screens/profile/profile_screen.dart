@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../config/app_theme.dart';
 import '../../services/auth_service.dart';
 import '../../services/profile_service.dart';
@@ -10,12 +11,14 @@ class ProfileScreen extends StatefulWidget {
   final ProfileService profileService;
   final AuthService authService;
   final ThemeService? themeService;
+  final bool isEmbedded;
 
   const ProfileScreen({
     super.key,
     required this.profileService,
     required this.authService,
     this.themeService,
+    this.isEmbedded = false,
   });
 
   @override
@@ -40,7 +43,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _openEditProfile() async {
-    final updated = await EditProfileDialog.show(context, widget.profileService);
+    final updated = await EditProfileDialog.show(
+      context,
+      widget.profileService,
+    );
     if (updated == true && mounted) {
       setState(() {});
     }
@@ -51,7 +57,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Confirm Logout'),
-        content: const Text('Are you sure you want to log out of your account?'),
+        content: const Text(
+          'Are you sure you want to log out of your account?',
+        ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: [
           TextButton(
@@ -96,7 +104,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Profile'),
+        automaticallyImplyLeading: !widget.isEmbedded,
+        title: Text(widget.isEmbedded ? 'Settings' : 'My Profile'),
         elevation: 0,
         actions: [
           IconButton(
@@ -132,8 +141,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       child: CircleAvatar(
                         radius: 54,
-                        backgroundColor: AppTheme.primary.withValues(alpha: 0.15),
-                        backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty)
+                        backgroundColor: AppTheme.primary.withValues(
+                          alpha: 0.15,
+                        ),
+                        backgroundImage:
+                            (avatarUrl != null && avatarUrl.isNotEmpty)
                             ? NetworkImage(avatarUrl)
                             : null,
                         child: (avatarUrl == null || avatarUrl.isEmpty)
@@ -157,7 +169,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           color: AppTheme.primary,
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: isDark ? AppTheme.darkBackground : Colors.white,
+                            color: isDark
+                                ? AppTheme.darkBackground
+                                : Colors.white,
                             width: 3,
                           ),
                         ),
@@ -179,7 +193,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                  color: isDark
+                      ? AppTheme.darkTextPrimary
+                      : AppTheme.textPrimary,
                 ),
               ),
               if (email.isNotEmpty) ...[
@@ -188,7 +204,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   email,
                   style: TextStyle(
                     fontSize: 14,
-                    color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
+                    color: isDark
+                        ? AppTheme.darkTextSecondary
+                        : AppTheme.textSecondary,
                   ),
                 ),
               ],
@@ -216,7 +234,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                   side: BorderSide(
-                    color: isDark ? AppTheme.darkDividerColor : const Color(0xFFE2E8F0),
+                    color: isDark
+                        ? AppTheme.darkDividerColor
+                        : const Color(0xFFE2E8F0),
                   ),
                 ),
                 child: SwitchListTile(
@@ -228,14 +248,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     'Dark Theme',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                      color: isDark
+                          ? AppTheme.darkTextPrimary
+                          : AppTheme.textPrimary,
                     ),
                   ),
                   subtitle: Text(
                     isDark ? 'Dark mode enabled' : 'Light mode enabled',
                     style: TextStyle(
                       fontSize: 12,
-                      color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
+                      color: isDark
+                          ? AppTheme.darkTextSecondary
+                          : AppTheme.textSecondary,
                     ),
                   ),
                   value: isDark,
@@ -256,11 +280,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   decoration: BoxDecoration(
                     color: AppTheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppTheme.primary.withValues(alpha: 0.3)),
+                    border: Border.all(
+                      color: AppTheme.primary.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Column(
                     children: [
-                      const Icon(Icons.cloud_upload_rounded, color: AppTheme.primary, size: 32),
+                      const Icon(
+                        Icons.cloud_upload_rounded,
+                        color: AppTheme.primary,
+                        size: 32,
+                      ),
                       const SizedBox(height: 8),
                       const Text(
                         'Upgrade to Google Account',
@@ -276,7 +306,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 12,
-                          color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
+                          color: isDark
+                              ? AppTheme.darkTextSecondary
+                              : AppTheme.textSecondary,
                         ),
                       ),
                       const SizedBox(height: 14),
@@ -289,7 +321,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           onPressed: () async {
                             final navigator = Navigator.of(context);
-                            final success = await widget.authService.signInWithGoogle();
+                            final success = await widget.authService
+                                .signInWithGoogle();
                             if (success && mounted) {
                               navigator.pop();
                             }
@@ -309,12 +342,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppTheme.expenseRose,
-                    side: BorderSide(color: AppTheme.expenseRose.withValues(alpha: 0.5)),
+                    side: BorderSide(
+                      color: AppTheme.expenseRose.withValues(alpha: 0.5),
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   onPressed: _confirmLogout,
                   icon: const Icon(Icons.logout_rounded, size: 20),
-                  label: Text(widget.authService.isGuest ? 'Exit Guest Mode' : 'Log Out'),
+                  label: Text(
+                    widget.authService.isGuest ? 'Exit Guest Mode' : 'Log Out',
+                  ),
                 ),
               ),
             ],

@@ -17,6 +17,7 @@ class AddIncomeScreen extends StatefulWidget {
   final CategoryService? categoryService;
   final AccountService? accountService;
   final String userId;
+  final TransactionModel? existingTransaction;
 
   const AddIncomeScreen({
     super.key,
@@ -24,6 +25,7 @@ class AddIncomeScreen extends StatefulWidget {
     this.categoryService,
     this.accountService,
     required this.userId,
+    this.existingTransaction,
   });
 
   @override
@@ -54,9 +56,18 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
     _categoryService.fetchCategories(widget.userId);
     _accountService.fetchAccounts(widget.userId);
 
-    final available = _categoryService.allIncomeCategoryNames;
-    if (available.isNotEmpty) {
-      _selectedSource = available.first;
+    if (widget.existingTransaction != null) {
+      final tx = widget.existingTransaction!;
+      _amountController.text = tx.amount.toStringAsFixed(tx.amount.truncateToDouble() == tx.amount ? 0 : 2);
+      _descriptionController.text = tx.description;
+      _selectedSource = tx.category;
+      _selectedAccountId = tx.accountId;
+      _selectedDate = tx.date;
+    } else {
+      final available = _categoryService.allIncomeCategoryNames;
+      if (available.isNotEmpty) {
+        _selectedSource = available.first;
+      }
     }
   }
 
@@ -180,19 +191,29 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
             ? (Supabase.instance.client.auth.currentUser?.id ?? '')
             : '');
 
-    final newIncome = TransactionModel(
-      id: 'tx-${DateTime.now().millisecondsSinceEpoch}',
-      userId: activeUserId,
-      accountId: _selectedAccountId!,
-      type: 'income',
-      amount: amount,
-      category: _selectedSource,
-      description: _descriptionController.text.trim(),
-      date: _selectedDate,
-      createdAt: DateTime.now(),
-    );
+    final incomeTx = widget.existingTransaction != null
+        ? widget.existingTransaction!.copyWith(
+            accountId: _selectedAccountId!,
+            amount: amount,
+            category: _selectedSource,
+            description: _descriptionController.text.trim(),
+            date: _selectedDate,
+          )
+        : TransactionModel(
+            id: 'tx-${DateTime.now().millisecondsSinceEpoch}',
+            userId: activeUserId,
+            accountId: _selectedAccountId!,
+            type: 'income',
+            amount: amount,
+            category: _selectedSource,
+            description: _descriptionController.text.trim(),
+            date: _selectedDate,
+            createdAt: DateTime.now(),
+          );
 
-    final success = await widget.transactionService.addTransaction(newIncome);
+    final success = widget.existingTransaction != null
+        ? await widget.transactionService.updateTransaction(incomeTx)
+        : await widget.transactionService.addTransaction(incomeTx);
 
     if (mounted) {
       setState(() {
@@ -201,8 +222,12 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
 
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Income saved successfully!'),
+          SnackBar(
+            content: Text(
+              widget.existingTransaction != null
+                  ? 'Income updated successfully!'
+                  : 'Income saved successfully!',
+            ),
             backgroundColor: AppTheme.incomeGreen,
           ),
         );
@@ -242,7 +267,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Income'),
+        title: Text(widget.existingTransaction != null ? 'Edit Income' : 'Add Income'),
       ),
       body: SafeArea(
         child: SingleChildScrollView(

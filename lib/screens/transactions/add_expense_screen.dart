@@ -17,6 +17,7 @@ class AddExpenseScreen extends StatefulWidget {
   final CategoryService? categoryService;
   final AccountService? accountService;
   final String userId;
+  final TransactionModel? existingTransaction;
 
   const AddExpenseScreen({
     super.key,
@@ -24,6 +25,7 @@ class AddExpenseScreen extends StatefulWidget {
     this.categoryService,
     this.accountService,
     required this.userId,
+    this.existingTransaction,
   });
 
   @override
@@ -54,9 +56,18 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     _categoryService.fetchCategories(widget.userId);
     _accountService.fetchAccounts(widget.userId);
 
-    final available = _categoryService.allExpenseCategoryNames;
-    if (available.isNotEmpty) {
-      _selectedCategory = available.first;
+    if (widget.existingTransaction != null) {
+      final tx = widget.existingTransaction!;
+      _amountController.text = tx.amount.toStringAsFixed(tx.amount.truncateToDouble() == tx.amount ? 0 : 2);
+      _descriptionController.text = tx.description;
+      _selectedCategory = tx.category;
+      _selectedAccountId = tx.accountId;
+      _selectedDate = tx.date;
+    } else {
+      final available = _categoryService.allExpenseCategoryNames;
+      if (available.isNotEmpty) {
+        _selectedCategory = available.first;
+      }
     }
   }
 
@@ -180,19 +191,29 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
             ? (Supabase.instance.client.auth.currentUser?.id ?? '')
             : '');
 
-    final newExpense = TransactionModel(
-      id: 'tx-${DateTime.now().millisecondsSinceEpoch}',
-      userId: activeUserId,
-      accountId: _selectedAccountId!,
-      type: 'expense',
-      amount: amount,
-      category: _selectedCategory,
-      description: _descriptionController.text.trim(),
-      date: _selectedDate,
-      createdAt: DateTime.now(),
-    );
+    final expenseTx = widget.existingTransaction != null
+        ? widget.existingTransaction!.copyWith(
+            accountId: _selectedAccountId!,
+            amount: amount,
+            category: _selectedCategory,
+            description: _descriptionController.text.trim(),
+            date: _selectedDate,
+          )
+        : TransactionModel(
+            id: 'tx-${DateTime.now().millisecondsSinceEpoch}',
+            userId: activeUserId,
+            accountId: _selectedAccountId!,
+            type: 'expense',
+            amount: amount,
+            category: _selectedCategory,
+            description: _descriptionController.text.trim(),
+            date: _selectedDate,
+            createdAt: DateTime.now(),
+          );
 
-    final success = await widget.transactionService.addTransaction(newExpense);
+    final success = widget.existingTransaction != null
+        ? await widget.transactionService.updateTransaction(expenseTx)
+        : await widget.transactionService.addTransaction(expenseTx);
 
     if (mounted) {
       setState(() {
@@ -201,8 +222,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Expense saved successfully!'),
+          SnackBar(
+            content: Text(
+              widget.existingTransaction != null
+                  ? 'Expense updated successfully!'
+                  : 'Expense saved successfully!',
+            ),
             backgroundColor: AppTheme.expenseRose,
           ),
         );
@@ -242,7 +267,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Expense'),
+        title: Text(widget.existingTransaction != null ? 'Edit Expense' : 'Add Expense'),
       ),
       body: SafeArea(
         child: SingleChildScrollView(

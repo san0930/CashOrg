@@ -12,11 +12,13 @@ enum ReportPeriod { weekly, monthly }
 class ReportsScreen extends StatefulWidget {
   final TransactionService transactionService;
   final AccountService? accountService;
+  final bool isEmbedded;
 
   const ReportsScreen({
     super.key,
     required this.transactionService,
     this.accountService,
+    this.isEmbedded = false,
   });
 
   @override
@@ -152,6 +154,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: !widget.isEmbedded,
         title: const Text('Financial Reports'),
         elevation: 0,
       ),

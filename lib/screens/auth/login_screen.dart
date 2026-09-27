@@ -76,7 +76,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         color: isDark ? const Color(0xFFFBBF24) : AppTheme.primary,
                       ),
                       onPressed: () {
-                        ThemeService().toggleTheme();
+                        (widget.themeService ?? ThemeService()).toggleTheme();
                         if (mounted) setState(() {});
                       },
                     ),

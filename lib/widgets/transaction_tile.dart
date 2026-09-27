@@ -7,11 +7,15 @@ import 'category_icon.dart';
 class TransactionTile extends StatelessWidget {
   final TransactionModel transaction;
   final VoidCallback? onDelete;
+  final VoidCallback? onEdit;
+  final VoidCallback? onTap;
 
   const TransactionTile({
     super.key,
     required this.transaction,
     this.onDelete,
+    this.onEdit,
+    this.onTap,
   });
 
   @override
@@ -44,6 +48,7 @@ class TransactionTile extends StatelessWidget {
         ],
       ),
       child: ListTile(
+        onTap: onTap ?? onEdit,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         leading: Container(
           width: 46,
@@ -108,14 +113,34 @@ class TransactionTile extends StatelessWidget {
             ],
           ),
         ),
-        trailing: onDelete != null
-            ? IconButton(
-                icon: Icon(
-                  Icons.delete_outline_rounded,
-                  color: isDark ? AppTheme.darkTextSecondary : const Color(0xFF94A3B8),
-                  size: 20,
-                ),
-                onPressed: onDelete,
+        trailing: (onEdit != null || onDelete != null)
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (onEdit != null)
+                    IconButton(
+                      icon: Icon(
+                        Icons.edit_outlined,
+                        color: AppTheme.primary,
+                        size: 20,
+                      ),
+                      onPressed: onEdit,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  if (onEdit != null && onDelete != null) const SizedBox(width: 12),
+                  if (onDelete != null)
+                    IconButton(
+                      icon: Icon(
+                        Icons.delete_outline_rounded,
+                        color: isDark ? AppTheme.darkTextSecondary : AppTheme.expenseRose,
+                        size: 20,
+                      ),
+                      onPressed: onDelete,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                ],
               )
             : null,
       ),
