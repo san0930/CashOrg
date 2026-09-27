@@ -10,7 +10,6 @@ import '../../services/category_service.dart';
 import '../../services/profile_service.dart';
 import '../../services/theme_service.dart';
 import '../../services/transaction_service.dart';
-import '../../widgets/income_expense_chart.dart';
 import '../../widgets/summary_card.dart';
 import '../accounts/account_management_screen.dart';
 import '../accounts/add_account_dialog.dart';
@@ -1046,19 +1045,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 28),
-
-              // 6. Pie Chart Section (Account-specific breakdown or overall)
-              if (_selectedAccountId == 'all')
-                IncomeExpensePieChart(
-                  totalIncome: computedIncome,
-                  totalExpenses: computedExpense,
-                )
-              else
-                AccountCategoryPieChart(
-                  transactions: displayTransactions,
-                  title: selectedAccountName,
-                ),
             ],
           ),
         ),
