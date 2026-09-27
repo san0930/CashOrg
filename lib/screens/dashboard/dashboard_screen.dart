@@ -12,7 +12,6 @@ import '../../services/theme_service.dart';
 import '../../services/transaction_service.dart';
 import '../../widgets/income_expense_chart.dart';
 import '../../widgets/summary_card.dart';
-import '../../widgets/transaction_tile.dart';
 import '../accounts/account_management_screen.dart';
 import '../accounts/add_account_dialog.dart';
 import '../auth/login_screen.dart';
@@ -347,10 +346,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           .where((t) => t.isExpense)
           .fold(0.0, (sum, t) => sum + t.amount);
     }
-
-    final recent = List<TransactionModel>.from(displayTransactions)
-      ..sort((a, b) => b.date.compareTo(a.date));
-    final recentDisplay = recent.take(5).toList();
 
     final currencyFormat = NumberFormat.currency(
       locale: 'en_IN',
@@ -1063,126 +1058,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 AccountCategoryPieChart(
                   transactions: displayTransactions,
                   title: selectedAccountName,
-                ),
-              const SizedBox(height: 30),
-
-              // 7. Recent Transactions Header & List
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    _selectedAccountId == 'all'
-                        ? 'Recent Transactions'
-                        : '$selectedAccountName Transactions',
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
-                      color: isDark
-                          ? AppTheme.darkTextPrimary
-                          : AppTheme.textPrimary,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      setState(() {
-                        _currentIndex = 1; // Switch to Transactions tab
-                      });
-                    },
-                    child: const Text(
-                      'View All',
-                      style: TextStyle(
-                        color: AppTheme.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              if (recentDisplay.isEmpty)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(32),
-                  decoration: BoxDecoration(
-                    color: isDark ? AppTheme.darkSurface : Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: isDark
-                          ? AppTheme.darkDividerColor
-                          : const Color(0xFFF1F5F9),
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.receipt_long_outlined,
-                        size: 48,
-                        color: isDark
-                            ? AppTheme.darkTextSecondary
-                            : AppTheme.textSecondary.withValues(alpha: 0.5),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'No transactions yet',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: isDark
-                              ? AppTheme.darkTextPrimary
-                              : AppTheme.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _selectedAccountId == 'all'
-                            ? 'Tap Add Expense or Add Income to start tracking in ₹'
-                            : 'No transactions found for $selectedAccountName',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: isDark
-                              ? AppTheme.darkTextSecondary
-                              : AppTheme.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              else
-                ...recentDisplay.map(
-                  (tx) => TransactionTile(
-                    transaction: tx,
-                    onEdit: () {
-                      if (tx.isExpense) {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => AddExpenseScreen(
-                              transactionService: _transactionService,
-                              categoryService: _categoryService,
-                              accountService: _accountService,
-                              userId: userId,
-                              existingTransaction: tx,
-                            ),
-                          ),
-                        );
-                      } else {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => AddIncomeScreen(
-                              transactionService: _transactionService,
-                              categoryService: _categoryService,
-                              accountService: _accountService,
-                              userId: userId,
-                              existingTransaction: tx,
-                            ),
-                          ),
-                        );
-                      }
-                    },
-                    onDelete: () =>
-                        _transactionService.deleteTransaction(tx.id),
-                  ),
                 ),
             ],
           ),
